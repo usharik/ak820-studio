@@ -13,27 +13,27 @@ public enum LightingMode: UInt8, CaseIterable, Codable, Identifiable {
 
     public var title: String {
         switch self {
-        case .off: return "Выключено"
-        case .statik: return "Статичный цвет"
-        case .singleOn: return "Нажатая клавиша"
-        case .singleOff: return "Гаснет нажатая"
-        case .glittering: return "Мерцание (звёзды)"
-        case .falling: return "Дождь"
-        case .colourful: return "Разноцветный"
-        case .breath: return "Дыхание"
-        case .spectrum: return "Спектр"
-        case .outward: return "Фонтан"
-        case .scrolling: return "Прокрутка"
-        case .rolling: return "Радужная волна"
-        case .rotating: return "Вращение"
-        case .explode: return "Взрыв"
-        case .launch: return "Запуск"
-        case .ripples: return "Круги на воде"
-        case .flowing: return "Течение"
-        case .pulsating: return "Пульсация"
-        case .tilt: return "Наклон"
-        case .shuttle: return "Челнок"
-        case .custom: return "Свои цвета клавиш"
+        case .off: return String(localized: "Lights off")
+        case .statik: return String(localized: "Static color")
+        case .singleOn: return String(localized: "Pressed key lights up")
+        case .singleOff: return String(localized: "Pressed key goes dark")
+        case .glittering: return String(localized: "Glittering (stars)")
+        case .falling: return String(localized: "Rain")
+        case .colourful: return String(localized: "Colorful")
+        case .breath: return String(localized: "Breathing")
+        case .spectrum: return String(localized: "Spectrum")
+        case .outward: return String(localized: "Fountain")
+        case .scrolling: return String(localized: "Scrolling")
+        case .rolling: return String(localized: "Rainbow wave")
+        case .rotating: return String(localized: "Rotating")
+        case .explode: return String(localized: "Explode")
+        case .launch: return String(localized: "Launch")
+        case .ripples: return String(localized: "Ripples")
+        case .flowing: return String(localized: "Flowing")
+        case .pulsating: return String(localized: "Pulsating")
+        case .tilt: return String(localized: "Tilt")
+        case .shuttle: return String(localized: "Shuttle")
+        case .custom: return String(localized: "Custom key colors")
         }
     }
 
@@ -76,11 +76,11 @@ public enum MouseAction: String, Codable, CaseIterable {
 
     public var title: String {
         switch self {
-        case .left: return "Левый клик"
-        case .right: return "Правый клик"
-        case .middle: return "Средний клик"
-        case .wheelUp: return "Колесо вверх"
-        case .wheelDown: return "Колесо вниз"
+        case .left: return String(localized: "Left click")
+        case .right: return String(localized: "Right click")
+        case .middle: return String(localized: "Middle click")
+        case .wheelUp: return String(localized: "Wheel up")
+        case .wheelDown: return String(localized: "Wheel down")
         }
     }
 
@@ -100,11 +100,11 @@ public enum MacroPlayMode: Int, Codable, CaseIterable {
 
     public var title: String {
         switch self {
-        case .once: return "Один раз"
-        case .times: return "N раз"
-        case .toggle: return "До повторного нажатия"
-        case .whileHeld: return "Пока клавиша зажата"
-        case .step: return "По шагу на нажатие"
+        case .once: return String(localized: "Once")
+        case .times: return String(localized: "N times")
+        case .toggle: return String(localized: "Until pressed again")
+        case .whileHeld: return String(localized: "While held")
+        case .step: return String(localized: "One step per press")
         }
     }
 }
@@ -126,7 +126,7 @@ public enum KeyAction: Codable, Hashable {
         case let .mouse(m):
             return [0x01, m.bytes.0, m.bytes.1, 0x00]
         case let .macro(id, mode, times):
-            guard let i = macroIndex(id) else { throw AK820Error.invalid("Назначен удалённый макрос") }
+            guard let i = macroIndex(id) else { throw AK820Error.invalid(String(localized: "A deleted macro is assigned to a key")) }
             return [0x06, UInt8(i), UInt8(mode.rawValue), UInt8(clamping: max(1, times))]
         case .disabled:
             return [0x05, 0x03, 0x00, 0x00]
@@ -140,8 +140,9 @@ public enum KeyAction: Codable, Hashable {
             return code == 0 ? (m.isEmpty ? "—" : m) : m + HIDUsage.name(code)
         case let .media(code): return HIDUsage.mediaName(code)
         case let .mouse(m): return m.title
-        case let .macro(id, _, _): return "Макрос «\(macros.first { $0.id == id }?.name ?? "?")»"
-        case .disabled: return "Отключена"
+        case let .macro(id, _, _): let name = macros.first { $0.id == id }?.name ?? "?"
+            return String(localized: "Macro “\(name)”")
+        case .disabled: return String(localized: "Disabled")
         }
     }
 }
@@ -275,7 +276,7 @@ public enum Encode {
             case let .text(s):
                 for ch in s {
                     guard let (u, shift) = HIDUsage.usage(for: ch) else {
-                        throw AK820Error.invalid("Макрос «\(m.name)»: символ «\(ch)» нельзя набрать (только латиница, цифры и ASCII-символы)")
+                        throw AK820Error.invalid(String(localized: "Macro “\(m.name)”: the character “\(String(ch))” can't be typed (only Latin letters, digits and ASCII symbols)"))
                     }
                     tap(shift ? [0xE1, u] : [u])
                 }
@@ -294,14 +295,14 @@ public enum Encode {
 
     /// The whole macro area (all 100 slots), padded to 64 and ended by `AA 55`.
     public static func macroBlock(_ macros: [Macro]) throws -> [UInt8] {
-        guard macros.count <= 100 else { throw AK820Error.invalid("Не больше 100 макросов") }
+        guard macros.count <= 100 else { throw AK820Error.invalid(String(localized: "No more than 100 macros")) }
         var block = [UInt8](repeating: 0, count: macroBlockMax)
         var pos = macroBodyStart
         for (i, m) in macros.enumerated() {
             let ev = try events(m)
             let body = ev.flatMap { $0 }
             guard pos + 8 + body.count + 2 <= macroBlockMax else {
-                throw AK820Error.invalid("Макросы не помещаются в память клавиатуры (3,5 КБ). Сократите их.")
+                throw AK820Error.invalid(String(localized: "The macros don't fit into the keyboard memory (3.5 KB). Make them shorter."))
             }
             block[i * 4] = UInt8(pos & 0xFF); block[i * 4 + 1] = UInt8(pos >> 8)
             block[pos] = UInt8(ev.count & 0xFF); block[pos + 1] = UInt8(ev.count >> 8)

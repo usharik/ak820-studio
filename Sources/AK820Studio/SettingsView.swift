@@ -5,24 +5,26 @@ struct SettingsView: View {
     @EnvironmentObject var store: Store
     @State private var showLog = false
     @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
+    @State private var language = (UserDefaults.standard.array(forKey: "AppleLanguages") as? [String])
+        .flatMap { $0.count == 1 ? $0.first : nil } ?? ""
 
     private var s: Binding<KeyboardSettings> { $store.config.settings }
 
     var body: some View {
-        Page(hint: "Системные настройки клавиатуры. Клавиатура не умеет сообщать текущие значения, поэтому здесь показано то, что последний раз было записано с этого Mac.") {
+        Page(hint: "Keyboard system settings. The keyboard can't report its current values, so this shows what was last written from this Mac.") {
             Form {
-                Picker("Засыпать через", selection: s.sleep) {
-                    Text("Никогда").tag(0); Text("1 минуту").tag(1); Text("5 минут").tag(2); Text("30 минут").tag(3)
+                Picker("Sleep after", selection: s.sleep) {
+                    Text("Never").tag(0); Text("1 minute").tag(1); Text("5 minutes").tag(2); Text("30 minutes").tag(3)
                 }
-                Picker("Клавиша Fn", selection: s.fnToggle) {
-                    Text("Работает, пока зажата").tag(false)
-                    Text("Переключает слой (нажал — включил)").tag(true)
+                Picker("Fn key", selection: s.fnToggle) {
+                    Text("Active while held").tag(false)
+                    Text("Toggles the layer (press to switch)").tag(true)
                 }
-                LevelSlider(title: "Защита от дребезга (время отклика)", value: s.responseLevel, range: 1...5)
-                Section("Блокировки (для игр)") {
-                    Toggle("Отключить клавишу Win/⌘", isOn: s.lockWin)
-                    Toggle("Отключить Alt+F4", isOn: s.lockAltF4)
-                    Toggle("Отключить Alt+Tab", isOn: s.lockAltTab)
+                LevelSlider(title: "Debounce (response time)", value: s.responseLevel, range: 1...5)
+                Section("Locks (for games)") {
+                    Toggle("Disable the Win/⌘ key", isOn: s.lockWin)
+                    Toggle("Disable Alt+F4", isOn: s.lockAltF4)
+                    Toggle("Disable Alt+Tab", isOn: s.lockAltTab)
                 }
             }
             .formStyle(.grouped)
@@ -32,16 +34,33 @@ struct SettingsView: View {
 
             Divider()
             HStack {
-                Button("Синхронизировать часы") { store.syncClock() }.disabled(store.busy != nil || !store.connected)
-                Button("Обновить заряд батареи") { store.readBattery() }.disabled(!store.connected)
+                Button("Sync clock") { store.syncClock() }.disabled(store.busy != nil || !store.connected)
+                Button("Refresh battery level") { store.readBattery() }.disabled(!store.connected)
             }
-            Toggle("Значок AK820 в строке меню (быстрые настройки подсветки)", isOn: $showMenuBarExtra)
             HStack {
-                Button("Экспорт всех настроек…") { store.exportConfig() }
-                Button("Импорт…") { store.importConfig() }
+                Picker("Language", selection: $language) {
+                    Text("System").tag("")
+                    ForEach(Bundle.main.localizations.filter { $0 != "Base" }.sorted(), id: \.self) { code in
+                        Text(verbatim: Locale(identifier: code).localizedString(forIdentifier: code)?.capitalized ?? code).tag(code)
+                    }
+                }
+                .frame(maxWidth: 300)
+                .onChange(of: language) {
+                    if language.isEmpty {
+                        UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+                    } else {
+                        UserDefaults.standard.set([language], forKey: "AppleLanguages")
+                    }
+                    store.status = (String(localized: "Restart AK820 Studio to apply the language."), true)
+                }
+            }
+            Toggle("AK820 icon in the menu bar (quick lighting controls)", isOn: $showMenuBarExtra)
+            HStack {
+                Button("Export all settings…") { store.exportConfig() }
+                Button("Import…") { store.importConfig() }
             }
 
-            DisclosureGroup("Журнал обмена с клавиатурой", isExpanded: $showLog) {
+            DisclosureGroup("Keyboard communication log", isExpanded: $showLog) {
                 ScrollView {
                     Text(store.log.suffix(200).joined(separator: "\n"))
                         .font(.system(size: 11, design: .monospaced))

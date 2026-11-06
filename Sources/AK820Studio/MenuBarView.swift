@@ -9,11 +9,11 @@ struct MenuBarView: View {
     @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
-    private let quickModes: [(LightingMode, String, String)] = [
-        (.off, "lightbulb.slash", "Выкл"), (.statik, "circle.fill", "Статика"), (.breath, "wind", "Дыхание"),
-        (.rolling, "water.waves", "Волна"), (.spectrum, "rainbow", "Спектр"),
-        (.ripples, "dot.radiowaves.left.and.right", "Круги"), (.singleOn, "hand.tap", "Нажатие"),
-        (.glittering, "sparkles", "Звёзды"),
+    private let quickModes: [(LightingMode, String, LocalizedStringKey)] = [
+        (.off, "lightbulb.slash", "Off"), (.statik, "circle.fill", "Static"), (.breath, "wind", "Breathing"),
+        (.rolling, "water.waves", "Wave"), (.spectrum, "rainbow", "Spectrum"),
+        (.ripples, "dot.radiowaves.left.and.right", "Rings"), (.singleOn, "hand.tap", "Press"),
+        (.glittering, "sparkles", "Stars"),
     ]
 
     private let swatches: [RGB] = [
@@ -29,7 +29,7 @@ struct MenuBarView: View {
             header
             Divider()
 
-            Text("Подсветка").font(.caption).foregroundStyle(.secondary)
+            Text("Lighting").font(.caption).foregroundStyle(.secondary)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
                 ForEach(quickModes, id: \.0) { mode, icon, name in
                     Button { setMode(mode) } label: {
@@ -45,7 +45,7 @@ struct MenuBarView: View {
                 }
             }
             Button { applyCustomColors() } label: {
-                Label("Свои цвета клавиш", systemImage: "paintpalette").frame(maxWidth: .infinity)
+                Label("Custom key colors", systemImage: "paintpalette").frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .tint(light.mode == .custom ? .accentColor : nil)
@@ -56,7 +56,7 @@ struct MenuBarView: View {
                         .frame(width: 18, height: 18)
                 }
                 .buttonStyle(.plain)
-                .help("Радуга")
+                .help("Rainbow")
                 ForEach(swatches, id: \.self) { c in
                     Button { setColor(c) } label: {
                         Circle().fill(c.color).frame(width: 18, height: 18)
@@ -78,14 +78,14 @@ struct MenuBarView: View {
 
             Divider()
             VStack(spacing: 0) {
-                MenuRow(title: "Синхронизировать часы", icon: "clock") { store.syncClock() }.disabled(!ready)
-                MenuRow(title: "Открыть AK820 Studio…", icon: "macwindow") { openMain() }
+                MenuRow(title: "Sync clock", icon: "clock") { store.syncClock() }.disabled(!ready)
+                MenuRow(title: "Open AK820 Studio…", icon: "macwindow") { openMain() }
             }
             Divider()
-            Toggle("Запускать при входе в систему", isOn: Binding(get: { launchAtLogin }, set: setLaunchAtLogin))
-            Toggle("Значок в строке меню", isOn: $showMenuBarExtra)
+            Toggle("Launch at login", isOn: Binding(get: { launchAtLogin }, set: setLaunchAtLogin))
+            Toggle("Show in menu bar", isOn: $showMenuBarExtra)
             Divider()
-            MenuRow(title: "Завершить", icon: "power") { NSApp.terminate(nil) }
+            MenuRow(title: "Quit", icon: "power") { NSApp.terminate(nil) }
         }
         .padding(14)
         .frame(width: 300)
@@ -98,13 +98,13 @@ struct MenuBarView: View {
                 Text("AK820 Pro").font(.headline)
                 Group {
                     if let busy = store.busy {
-                        Text("\(busy)…")
+                        Text(verbatim: "\(busy)…")
                     } else if !store.connected {
-                        Text("Не подключена кабелем")
+                        Text("Not connected by cable")
                     } else if let s = store.status, !s.ok {
                         Text(s.text).foregroundStyle(.orange)
                     } else {
-                        Text(store.battery.map { "Подключена · батарея \($0) %" } ?? "Подключена")
+                        if let b = store.battery { Text("Connected · battery \(b)%") } else { Text("Connected") }
                     }
                 }
                 .font(.caption).foregroundStyle(.secondary).lineLimit(2)
@@ -153,7 +153,7 @@ struct MenuBarView: View {
         do {
             if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
         } catch {
-            store.status = ("Автозапуск: \(error.localizedDescription)", false)
+            store.status = (String(localized: "Launch at login: \(error.localizedDescription)"), false)
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }
@@ -161,7 +161,7 @@ struct MenuBarView: View {
 
 /// A full-width menu-like row with hover highlight.
 private struct MenuRow: View {
-    let title: String
+    let title: LocalizedStringKey
     let icon: String
     let action: () -> Void
     @State private var hover = false

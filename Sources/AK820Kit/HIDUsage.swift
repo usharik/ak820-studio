@@ -41,7 +41,8 @@ public enum HIDUsage {
     /// Modifier bits used by the keyboard's "key combination" entries (standard USB order).
     public static let modifiers: [(bit: UInt8, name: String)] = [
         (0x01, "⌃ Control"), (0x02, "⇧ Shift"), (0x04, "⌥ Option"), (0x08, "⌘ Command"),
-        (0x10, "⌃ Control (прав.)"), (0x20, "⇧ Shift (прав.)"), (0x40, "⌥ Option (прав.)"), (0x80, "⌘ Command (прав.)"),
+        (0x10, String(localized: "⌃ Control (right)")), (0x20, String(localized: "⇧ Shift (right)")),
+        (0x40, String(localized: "⌥ Option (right)")), (0x80, String(localized: "⌘ Command (right)")),
     ]
 
     public static func modifierSymbols(_ mask: UInt8) -> String {
@@ -60,9 +61,9 @@ public enum HIDUsage {
 
     /// Consumer-page (multimedia) codes.
     public static let media: [(code: UInt16, name: String)] = [
-        (0xCD, "Play / Pause"), (0xB5, "Следующий трек"), (0xB6, "Предыдущий трек"), (0xB7, "Стоп"),
-        (0xE2, "Без звука"), (0xE9, "Громкость +"), (0xEA, "Громкость −"),
-        (0x6F, "Яркость экрана +"), (0x70, "Яркость экрана −"),
+        (0xCD, String(localized: "Play / Pause")), (0xB5, String(localized: "Next track")), (0xB6, String(localized: "Previous track")), (0xB7, String(localized: "Stop")),
+        (0xE2, String(localized: "Mute")), (0xE9, String(localized: "Volume +")), (0xEA, String(localized: "Volume −")),
+        (0x6F, String(localized: "Display brightness +")), (0x70, String(localized: "Display brightness −")),
     ]
 
     public static func mediaName(_ code: UInt16) -> String {

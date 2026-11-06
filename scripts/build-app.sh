@@ -16,12 +16,16 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN/AK820Studio" "$APP/Contents/MacOS/AK820Studio"
 cp "$BIN/ak820ctl" dist/ak820ctl
+cp -R Localization/*.lproj "$APP/Contents/Resources/"
+LOCALIZATIONS=$(for d in Localization/*.lproj; do printf '<string>%s</string>' "$(basename "$d" .lproj)"; done)
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key><array>$LOCALIZATIONS</array>
     <key>CFBundleName</key><string>AK820 Studio</string>
     <key>CFBundleDisplayName</key><string>AK820 Studio</string>
     <key>CFBundleIdentifier</key><string>local.ak820studio</string>
@@ -37,5 +41,5 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 codesign --force --sign - "$APP" dist/ak820ctl
-echo "Готово: $APP"
-echo "Установка: cp -R \"$APP\" /Applications/"
+echo "Built: $APP"
+echo "Install: cp -R \"$APP\" /Applications/"

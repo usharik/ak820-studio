@@ -80,10 +80,10 @@ public final class Keyboard {
     private func retrying(_ what: String, _ body: () throws -> Bool) throws {
         for attempt in 1...3 {
             if try body() { return }
-            log?("\(what): попытка \(attempt) не прошла, повтор…")
+            log?("\(what): attempt \(attempt) failed, retrying…")
             Thread.sleep(forTimeInterval: 0.2)
         }
-        throw AK820Error.rejected("Клавиатура не подтвердила: \(what). Попробуйте ещё раз.")
+        throw AK820Error.rejected(String(localized: "The keyboard did not confirm: \(what). Please try again."))
     }
 
     // MARK: Operations
@@ -104,7 +104,7 @@ public final class Keyboard {
 
     public func setSettings(_ s: KeyboardSettings) throws {
         let data = Encode.settings(s)
-        try retrying("настройки") {
+        try retrying(String(localized: "settings")) {
             try send(Encode.control(Cmd.start, 0, 0))
             try send(Encode.control(Cmd.settings, 1, 1))
             Thread.sleep(forTimeInterval: Keyboard.pause)
@@ -126,7 +126,7 @@ public final class Keyboard {
         try send(Encode.lighting(light))
         try send(Encode.control(Cmd.commit, 0, 0))
         try send(Encode.control(Cmd.save, 0, 0))
-        try uploadTable(Cmd.colors, Encode.colors(colors, background: background), what: "цвета клавиш")
+        try uploadTable(Cmd.colors, Encode.colors(colors, background: background), what: String(localized: "key colors"))
     }
 
     /// Writes macros (if any) and both layers. Macros are one block shared by both layers.
@@ -135,7 +135,7 @@ public final class Keyboard {
         let fnTable = try Encode.keymap(fn, macros: macros)
         if !macros.isEmpty {
             let block = try Encode.macroBlock(macros)
-            try retrying("макросы") {
+            try retrying(String(localized: "macros")) {
                 try send(Encode.control(Cmd.macroOpen, 0, 0))
                 try send(Encode.control(Cmd.macroData, 0, UInt8(block.count / Encode.packet)))
                 Thread.sleep(forTimeInterval: 0.03)
@@ -144,8 +144,8 @@ public final class Keyboard {
                 return try commit(expecting: block)
             }
         }
-        try uploadTable(Cmd.keymapBase, baseTable, what: "основной слой")
-        try uploadTable(Cmd.keymapFn, fnTable, what: "слой Fn")
+        try uploadTable(Cmd.keymapBase, baseTable, what: String(localized: "base layer"))
+        try uploadTable(Cmd.keymapFn, fnTable, what: String(localized: "Fn layer"))
     }
 
     func uploadTable(_ cmd: UInt8, _ table: [UInt8], what: String) throws {
@@ -190,7 +190,7 @@ public final class Keyboard {
     public func uploadScreen(_ payload: [UInt8], slot: UInt8 = 1, progress: ((Double) -> Void)? = nil) throws {
         guard let data = HIDDevice.enumerate(vendorID: Keyboard.vendorID, productIDs: [productID])
             .first(where: { $0.usagePage == Keyboard.dataPage }) else {
-            throw AK820Error.rejected("Не найден интерфейс экрана (0xFF68)")
+            throw AK820Error.rejected(String(localized: "Screen interface (0xFF68) not found"))
         }
         try data.open()
         data.beginInput()
@@ -203,7 +203,7 @@ public final class Keyboard {
             try data.setOutput(Array(payload[b * ScreenImage.blockSize..<(b + 1) * ScreenImage.blockSize]))
             guard data.waitInput(timeout: 3) != nil else {
                 try? send(Encode.control(Cmd.save, 0, 0))
-                throw AK820Error.rejected("Экран не подтвердил блок \(b + 1) из \(blocks)")
+                throw AK820Error.rejected(String(localized: "The screen did not confirm block \(b + 1) of \(blocks)"))
             }
             progress?(Double(b + 1) / Double(blocks))
         }

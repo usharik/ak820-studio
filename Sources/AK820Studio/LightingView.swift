@@ -10,7 +10,7 @@ struct LightingView: View {
     private var animated: Bool { ![.off, .statik].contains(mode) }
 
     var body: some View {
-        Page(hint: "Встроенные эффекты подсветки. Сохраняются в памяти клавиатуры и работают на любом компьютере.") {
+        Page(hint: "Built-in lighting effects. They are stored in the keyboard and work on any computer.") {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), spacing: 8)], spacing: 8) {
                 ForEach(LightingMode.effects) { m in
                     Button { light.wrappedValue.mode = m; changed() } label: {
@@ -25,30 +25,30 @@ struct LightingView: View {
             Form {
                 if mode != .off {
                     if mode != .statik {
-                        Toggle("Радуга (вместо одного цвета)", isOn: light.rainbow).onChange(of: store.config.lighting.rainbow) { changed() }
+                        Toggle("Rainbow (instead of a single color)", isOn: light.rainbow).onChange(of: store.config.lighting.rainbow) { changed() }
                     }
-                    ColorPicker("Цвет", selection: Binding(
+                    ColorPicker("Color", selection: Binding(
                         get: { store.config.lighting.color.color },
                         set: { light.wrappedValue.color = RGB($0); changed() }), supportsOpacity: false)
                         .disabled(store.config.lighting.rainbow && mode != .statik)
-                    LevelSlider(title: "Яркость", value: light.brightness, onChange: changed)
+                    LevelSlider(title: "Brightness", value: light.brightness, onChange: changed)
                     if animated {
-                        LevelSlider(title: "Скорость", value: light.speed, onChange: changed)
-                        Picker("Направление", selection: light.direction) {
-                            Text("← Влево").tag(0); Text("↓ Вниз").tag(1); Text("↑ Вверх").tag(2); Text("→ Вправо").tag(3)
+                        LevelSlider(title: "Speed", value: light.speed, onChange: changed)
+                        Picker("Direction", selection: light.direction) {
+                            Text("← Left").tag(0); Text("↓ Down").tag(1); Text("↑ Up").tag(2); Text("→ Right").tag(3)
                         }
                         .pickerStyle(.segmented)
                         .onChange(of: store.config.lighting.direction) { changed() }
                     }
                 }
-                Toggle("Применять сразу при изменении", isOn: $store.config.applyLightingInstantly)
+                Toggle("Apply changes immediately", isOn: $store.config.applyLightingInstantly)
             }
             .formStyle(.grouped)
             .frame(maxWidth: 560)
 
             HStack {
-                WriteButton(title: "Применить") { store.applyLighting() }
-                Text("Подсказка: Fn + клавиши на самой клавиатуре тоже переключают эффекты.").font(.caption).foregroundStyle(.secondary)
+                WriteButton(title: "Apply") { store.applyLighting() }
+                Text("Tip: Fn + keys on the keyboard itself switch effects too.").font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -64,7 +64,7 @@ struct LightingView: View {
 }
 
 struct LevelSlider: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var value: Int
     var range: ClosedRange<Int> = 0...5
     var onChange: () -> Void = {}

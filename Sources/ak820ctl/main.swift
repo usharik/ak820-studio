@@ -2,15 +2,15 @@ import AK820Kit
 import Foundation
 
 let usage = """
-ak820ctl — AJAZZ AK820 Pro (USB) из терминала
+ak820ctl — AJAZZ AK820 Pro (USB) from the terminal
 
-  ak820ctl info                         интерфейсы клавиатуры (ничего не записывает)
-  ak820ctl battery                      заряд батареи
-  ak820ctl clock                        синхронизировать часы на экране
-  ak820ctl lights <режим> [RRGGBB] [яркость 0-5] [скорость 0-5]
-  ak820ctl image <файл.png|gif>         картинка/GIF на экран
-  -v                                    показывать обмен пакетами
-режимы: \(LightingMode.effects.map { "\($0.rawValue)" }.joined(separator: ","))  (1 = статичный, 0 = выкл)
+  ak820ctl info                         list keyboard interfaces (writes nothing)
+  ak820ctl battery                      battery level
+  ak820ctl clock                        sync the clock on the screen
+  ak820ctl lights <mode> [RRGGBB] [brightness 0-5] [speed 0-5]
+  ak820ctl image <file.png|gif>         image/GIF to the screen
+  -v                                    show packet exchange
+modes: \(LightingMode.effects.map { "\($0.rawValue)" }.joined(separator: ","))  (1 = static, 0 = off)
 """
 
 var args = Array(CommandLine.arguments.dropFirst())
@@ -34,11 +34,11 @@ do {
         }
     case "battery":
         try withKeyboard { kb in
-            print(try kb.battery().map { "Заряд: \($0) %" } ?? "Заряд неизвестен")
+            print(try kb.battery().map { "Battery: \($0)%" } ?? "Battery level unknown")
         }
     case "clock":
         try withKeyboard { try $0.syncClock() }
-        print("Часы синхронизированы")
+        print("Clock synced")
     case "lights":
         guard args.count >= 2, let m = UInt8(args[1]), let mode = LightingMode(rawValue: m) else {
             print(usage); exit(2)
@@ -52,20 +52,20 @@ do {
         if args.count >= 4, let b = Int(args[3]) { c.brightness = b }
         if args.count >= 5, let s = Int(args[4]) { c.speed = s }
         try withKeyboard { try $0.setLighting(c) }
-        print("Подсветка: \(mode.title)")
+        print("Lighting: \(mode.title)")
     case "image":
         guard args.count >= 2 else { print(usage); exit(2) }
         let img = try ScreenImage(url: URL(fileURLWithPath: args[1]))
         let payload = img.payload()
-        print("Кадров: \(img.frames.count), блоков: \(payload.count / ScreenImage.blockSize)")
+        print("Frames: \(img.frames.count), blocks: \(payload.count / ScreenImage.blockSize)")
         try withKeyboard { kb in
             try kb.uploadScreen(payload) { p in print(String(format: "\r  %3.0f %%", p * 100), terminator: "") ; fflush(stdout) }
         }
-        print("\nГотово")
+        print("\nDone")
     default:
         print(usage)
     }
 } catch {
-    FileHandle.standardError.write("Ошибка: \(error.localizedDescription)\n".data(using: .utf8)!)
+    FileHandle.standardError.write("Error: \(error.localizedDescription)\n".data(using: .utf8)!)
     exit(1)
 }

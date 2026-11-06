@@ -9,10 +9,10 @@ struct KeymapView: View {
     private var layer: Binding<[Int: KeyAction]> { fnLayer ? $store.config.fn : $store.config.base }
 
     var body: some View {
-        Page(hint: "Переназначение хранится в самой клавиатуре: работает на любом компьютере, по кабелю, 2.4G и Bluetooth. Нажмите на клавишу, выберите действие, затем «Записать».") {
+        Page(hint: "Remapping is stored in the keyboard itself: it works on any computer, over cable, 2.4 GHz and Bluetooth. Click a key, choose an action, then press “Write to keyboard”.") {
             Picker("", selection: $fnLayer) {
-                Text("Основной слой").tag(false)
-                Text("Слой Fn (Fn + клавиша)").tag(true)
+                Text("Base layer").tag(false)
+                Text("Fn layer (Fn + key)").tag(true)
             }
             .pickerStyle(.segmented)
             .frame(maxWidth: 420)
@@ -33,27 +33,28 @@ struct KeymapView: View {
                                  macros: store.config.macros)
                         .padding(6)
                 } label: {
-                    Text("\(fnLayer ? "Fn + " : "")\(key.label)").font(.headline)
+                    Text(verbatim: "\(fnLayer ? "Fn + " : "")\(key.label)").font(.headline)
                 }
                 .frame(maxWidth: 620)
             } else {
-                Text("Выберите клавишу на схеме.").foregroundStyle(.secondary)
+                Text("Select a key on the layout.").foregroundStyle(.secondary)
             }
 
             HStack {
                 WriteButton { store.applyKeymap() }
-                Button("Сбросить этот слой") { layer.wrappedValue = [:]; selected = nil }
-                Button("Сбросить всё") { store.config.base = [:]; store.config.fn = [:]; selected = nil }
+                Button("Reset this layer") { layer.wrappedValue = [:]; selected = nil }
+                Button("Reset all") { store.config.base = [:]; store.config.fn = [:]; selected = nil }
             }
-            Text("В режиме Mac клавиатура сама меняет местами Win и Alt. Переназначенная клавиша отправляет ровно то, что задано (⌘, ⌥ …). «Сбросить» + «Записать» возвращает заводскую раскладку. Fn переназначить нельзя.")
+            Text("In Mac mode the keyboard swaps Win and Alt by itself. A remapped key sends exactly what you set (⌘, ⌥ …). “Reset” + “Write to keyboard” restores the factory keymap. Fn can't be remapped.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }
 }
 
 private enum ActionKind: String, CaseIterable, Identifiable {
-    case none = "По умолчанию", key = "Клавиша / сочетание", media = "Мультимедиа", mouse = "Мышь", macro = "Макрос", disabled = "Отключить"
+    case none = "Default", key = "Key / combination", media = "Media", mouse = "Mouse", macro = "Macro", disabled = "Disable"
     var id: String { rawValue }
+    var title: LocalizedStringKey { LocalizedStringKey(rawValue) }
 
     init(_ a: KeyAction?) {
         switch a {
@@ -73,8 +74,8 @@ struct ActionEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Действие", selection: Binding(get: { ActionKind(action) }, set: setKind)) {
-                ForEach(ActionKind.allCases) { Text($0.rawValue).tag($0) }
+            Picker("Action", selection: Binding(get: { ActionKind(action) }, set: setKind)) {
+                ForEach(ActionKind.allCases) { Text($0.title).tag($0) }
             }
 
             switch action {
@@ -82,31 +83,31 @@ struct ActionEditor: View {
                 ComboEditor(modifiers: Binding(get: { mods }, set: { action = .key(modifiers: $0, code: code) }),
                             code: Binding(get: { code }, set: { action = .key(modifiers: mods, code: $0) }))
             case let .media(code):
-                Picker("Функция", selection: Binding(get: { code }, set: { action = .media($0) })) {
+                Picker("Function", selection: Binding(get: { code }, set: { action = .media($0) })) {
                     ForEach(HIDUsage.media, id: \.code) { Text($0.name).tag($0.code) }
                 }
             case let .mouse(m):
-                Picker("Кнопка", selection: Binding(get: { m }, set: { action = .mouse($0) })) {
+                Picker("Button", selection: Binding(get: { m }, set: { action = .mouse($0) })) {
                     ForEach(MouseAction.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
             case let .macro(id, mode, times):
                 if macros.isEmpty {
-                    Text("Сначала создайте макрос на вкладке «Макросы».").foregroundStyle(.secondary)
+                    Text("Create a macro on the “Macros” tab first.").foregroundStyle(.secondary)
                 } else {
-                    Picker("Макрос", selection: Binding(get: { id }, set: { action = .macro(id: $0, mode: mode, times: times) })) {
+                    Picker("Macro", selection: Binding(get: { id }, set: { action = .macro(id: $0, mode: mode, times: times) })) {
                         ForEach(macros) { Text($0.name).tag($0.id) }
                     }
-                    Picker("Воспроизведение", selection: Binding(get: { mode }, set: { action = .macro(id: id, mode: $0, times: times) })) {
+                    Picker("Playback", selection: Binding(get: { mode }, set: { action = .macro(id: id, mode: $0, times: times) })) {
                         ForEach(MacroPlayMode.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
                     if mode == .times {
-                        Stepper("Повторов: \(times)", value: Binding(get: { times }, set: { action = .macro(id: id, mode: mode, times: $0) }), in: 1...255)
+                        Stepper("Repeats: \(times)", value: Binding(get: { times }, set: { action = .macro(id: id, mode: mode, times: $0) }), in: 1...255)
                     }
                 }
             case .disabled:
-                Text("Клавиша не будет ничего делать (экспериментально).").foregroundStyle(.secondary)
+                Text("The key will do nothing (experimental).").foregroundStyle(.secondary)
             case nil:
-                Text("Клавиша работает как с завода.").foregroundStyle(.secondary)
+                Text("The key works as from the factory.").foregroundStyle(.secondary)
             }
         }
     }
@@ -135,13 +136,13 @@ struct ComboEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Модификаторы")
+                Text("Modifiers")
                 ForEach(mods, id: \.0) { bit, sym in
                     Toggle(sym, isOn: Binding(get: { modifiers & bit != 0 },
                                               set: { modifiers = $0 ? modifiers | bit : modifiers & ~bit }))
                         .toggleStyle(.button)
                 }
-                Menu("Правые…") {
+                Menu("Right-hand…") {
                     ForEach(HIDUsage.modifiers.filter { $0.bit >= 0x10 }, id: \.bit) { m in
                         Toggle(m.name, isOn: Binding(get: { modifiers & m.bit != 0 },
                                                      set: { modifiers = $0 ? modifiers | m.bit : modifiers & ~m.bit }))
@@ -150,12 +151,12 @@ struct ComboEditor: View {
                 .fixedSize()
             }
             HStack {
-                Picker("Клавиша", selection: $code) {
-                    Text("— (только модификаторы)").tag(UInt8(0))
+                Picker("Key", selection: $code) {
+                    Text("— (modifiers only)").tag(UInt8(0))
                     ForEach(HIDUsage.keys) { Text($0.name).tag($0.code) }
                 }
                 .frame(maxWidth: 300)
-                Button(capturing ? "Нажмите клавишу… (Esc — отмена)" : "Нажать для выбора") { capturing ? stop() : start() }
+                Button(capturing ? "Press a key… (Esc to cancel)" : "Press to pick") { capturing ? stop() : start() }
             }
         }
         .onDisappear(perform: stop)

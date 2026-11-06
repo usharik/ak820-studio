@@ -25,8 +25,8 @@ struct MacrosView: View {
                 if let i = store.config.macros.firstIndex(where: { $0.id == selection }) {
                     MacroEditor(macro: $store.config.macros[i])
                 } else {
-                    Page(hint: "Макросы выполняет сама клавиатура: текст, сочетания клавиш, паузы и клики мыши. Создайте макрос (+), затем назначьте его клавише на вкладке «Клавиши».") {
-                        Text("Всего места: около 3,5 КБ (≈ 100 символов текста на 1 КБ).").foregroundStyle(.secondary)
+                    Page(hint: "Macros are played by the keyboard itself: text, key combinations, pauses and mouse clicks. Create a macro (+), then assign it to a key on the “Keys” tab.") {
+                        Text("Total space: about 3.5 KB (≈ 100 characters of text per 1 KB).").foregroundStyle(.secondary)
                     }
                 }
             }
@@ -35,7 +35,7 @@ struct MacrosView: View {
     }
 
     private func add() {
-        let m = Macro(name: "Макрос \(store.config.macros.count + 1)", steps: [.text("Hello")])
+        let m = Macro(name: String(localized: "Macro \(store.config.macros.count + 1)"), steps: [.text("Hello")])
         store.config.macros.append(m)
         selection = m.id
     }
@@ -57,13 +57,13 @@ struct MacroEditor: View {
         do {
             let all = store.config.macros
             let block = try Encode.macroBlock(all)
-            return ("Занято памяти макросов: \(block.count) из 3584 байт", true)
+            return (String(localized: "Macro memory used: \(block.count) of 3584 bytes"), true)
         } catch { return (error.localizedDescription, false) }
     }
 
     var body: some View {
-        Page(hint: "Текст набирается в английской (US) раскладке: используйте латиницу, цифры и ASCII-символы. Если в macOS включена другая раскладка, символы могут отличаться.") {
-            TextField("Название", text: $macro.name).textFieldStyle(.roundedBorder).frame(maxWidth: 360)
+        Page(hint: "Text is typed using the US English layout: use Latin letters, digits and ASCII symbols. With another input source active in macOS, symbols may come out differently.") {
+            TextField("Name", text: $macro.name).textFieldStyle(.roundedBorder).frame(maxWidth: 360)
 
             ForEach(macro.steps.indices, id: \.self) { i in
                 HStack(alignment: .top) {
@@ -78,21 +78,21 @@ struct MacroEditor: View {
             }
 
             HStack {
-                Text("Добавить:")
-                Button("Текст") { macro.steps.append(.text("")) }
-                Button("Сочетание клавиш") { macro.steps.append(.combo(modifiers: 0x08, code: 0x06)) }
-                Button("Пауза") { macro.steps.append(.delay(ms: 200)) }
-                Button("Клик мыши") { macro.steps.append(.click(.left)) }
+                Text("Add:")
+                Button("Text") { macro.steps.append(.text("")) }
+                Button("Key combination") { macro.steps.append(.combo(modifiers: 0x08, code: 0x06)) }
+                Button("Pause") { macro.steps.append(.delay(ms: 200)) }
+                Button("Mouse click") { macro.steps.append(.click(.left)) }
             }
 
-            Stepper("Пауза между нажатиями: \(macro.gapMs) мс", value: $macro.gapMs, in: 10...500, step: 5).frame(maxWidth: 360)
+            Stepper("Pause between key events: \(macro.gapMs) ms", value: $macro.gapMs, in: 10...500, step: 5).frame(maxWidth: 360)
 
             let info = sizeInfo
             Text(info.0).font(.caption).foregroundStyle(info.1 ? Color.secondary : Color.red)
 
             HStack {
-                WriteButton(title: "Записать макросы и раскладку") { store.applyKeymap() }
-                Text("Макросы отправляются вместе с раскладкой клавиш.").font(.caption).foregroundStyle(.secondary)
+                WriteButton(title: "Write macros and keymap") { store.applyKeymap() }
+                Text("Macros are written together with the keymap.").font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -105,26 +105,26 @@ private struct StepEditor: View {
         switch step {
         case let .text(s):
             HStack {
-                Text("Текст").frame(width: 90, alignment: .leading)
-                TextField("что набрать", text: Binding(get: { s }, set: { step = .text($0) }), axis: .vertical)
+                Text("Text").frame(width: 90, alignment: .leading)
+                TextField("text to type", text: Binding(get: { s }, set: { step = .text($0) }), axis: .vertical)
                     .textFieldStyle(.roundedBorder).frame(minWidth: 260)
             }
         case let .combo(mods, code):
             HStack(alignment: .top) {
-                Text("Сочетание").frame(width: 90, alignment: .leading)
+                Text("Combination").frame(width: 90, alignment: .leading)
                 ComboEditor(modifiers: Binding(get: { mods }, set: { step = .combo(modifiers: $0, code: code) }),
                             code: Binding(get: { code }, set: { step = .combo(modifiers: mods, code: $0) }))
             }
         case let .delay(ms):
             HStack {
-                Text("Пауза").frame(width: 90, alignment: .leading)
+                Text("Pause").frame(width: 90, alignment: .leading)
                 TextField("", value: Binding(get: { ms }, set: { step = .delay(ms: max(10, $0)) }), format: .number)
                     .textFieldStyle(.roundedBorder).frame(width: 90)
-                Text("мс")
+                Text("ms")
             }
         case let .click(btn):
             HStack {
-                Text("Клик").frame(width: 90, alignment: .leading)
+                Text("Click").frame(width: 90, alignment: .leading)
                 Picker("", selection: Binding(get: { btn }, set: { step = .click($0) })) {
                     ForEach([MouseAction.left, .right, .middle], id: \.self) { Text($0.title).tag($0) }
                 }

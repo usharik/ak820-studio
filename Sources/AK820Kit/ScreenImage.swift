@@ -24,10 +24,10 @@ public struct ScreenImage {
 
     public init(url: URL) throws {
         guard let src = CGImageSourceCreateWithURL(url as CFURL, nil) else {
-            throw AK820Error.invalid("Не удалось открыть изображение")
+            throw AK820Error.invalid(String(localized: "Couldn't open the image"))
         }
         let count = CGImageSourceGetCount(src)
-        guard count > 0 else { throw AK820Error.invalid("В файле нет изображений") }
+        guard count > 0 else { throw AK820Error.invalid(String(localized: "The file contains no images")) }
         var frames: [Frame] = []
         for i in 0..<min(count, ScreenImage.maxFrames) {
             guard let img = CGImageSourceCreateImageAtIndex(src, i, nil) else { continue }

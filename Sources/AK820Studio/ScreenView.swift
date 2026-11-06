@@ -10,7 +10,7 @@ struct ScreenView: View {
     @State private var error: String?
 
     var body: some View {
-        Page(hint: "Картинка или GIF для экрана 128×128. Изображение обрезается по центру до квадрата. GIF — до 140 кадров.") {
+        Page(hint: "An image or GIF for the 128×128 screen. The image is center-cropped to a square. GIFs: up to 140 frames.") {
             HStack(alignment: .top, spacing: 24) {
                 Preview(image: image)
                     .frame(width: 256, height: 256)
@@ -25,22 +25,22 @@ struct ScreenView: View {
                     }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Button("Выбрать файл…") { importing = true }
+                    Button("Choose File…") { importing = true }
                     if let image {
                         Text(fileName).bold()
-                        Text(image.frames.count > 1 ? "Анимация: \(image.frames.count) кадров" : "Статичная картинка")
-                        if image.truncated { Text("Взяты первые \(ScreenImage.maxFrames) кадров").foregroundStyle(.orange) }
-                        Text("Объём: \(image.payload().count / 1024) КБ").foregroundStyle(.secondary)
+                        if image.frames.count > 1 { Text("Animation, frames: \(image.frames.count)") } else { Text("Still image") }
+                        if image.truncated { Text("Only the first \(ScreenImage.maxFrames) frames are used").foregroundStyle(.orange) }
+                        Text("Size: \(image.payload().count / 1024) KB").foregroundStyle(.secondary)
                     } else {
-                        Text("Перетащите сюда PNG, JPEG или GIF").foregroundStyle(.secondary)
+                        Text("Drop a PNG, JPEG or GIF here").foregroundStyle(.secondary)
                     }
                     if let error { Text(error).foregroundStyle(.red) }
-                    WriteButton(title: "Отправить на экран") { if let image { store.uploadScreen(image) } }
+                    WriteButton(title: "Send to screen") { if let image { store.uploadScreen(image) } }
                         .disabled(image == nil)
                     Divider().frame(width: 260)
-                    Button("Показать часы и синхронизировать время") { store.syncClock() }
+                    Button("Show clock and sync time") { store.syncClock() }
                         .disabled(store.busy != nil || !store.connected)
-                    Text("Синхронизация часов переключает экран обратно на часы.").font(.caption).foregroundStyle(.secondary)
+                    Text("Syncing the clock switches the screen back to the clock.").font(.caption).foregroundStyle(.secondary)
                 }
             }
         }

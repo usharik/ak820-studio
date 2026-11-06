@@ -18,8 +18,8 @@ struct AK820StudioApp: App {
         }
         .commands {
             CommandGroup(replacing: .importExport) {
-                Button("Экспорт настроек…") { store.exportConfig() }
-                Button("Импорт настроек…") { store.importConfig() }
+                Button("Export Settings…") { store.exportConfig() }
+                Button("Import Settings…") { store.importConfig() }
             }
         }
 

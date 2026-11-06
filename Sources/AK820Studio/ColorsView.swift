@@ -13,15 +13,15 @@ struct ColorsView: View {
     ]
 
     var body: some View {
-        Page(hint: "Свой цвет для каждой клавиши (эффект «Свои цвета»). Выберите цвет и нажимайте на клавиши. Затем «Записать».") {
+        Page(hint: "Your own color for every key (the “Custom key colors” effect). Pick a color and click keys, then press “Write to keyboard”.") {
             HStack(spacing: 14) {
-                ColorPicker("Кисть", selection: $brush, supportsOpacity: false).fixedSize()
+                ColorPicker("Brush", selection: $brush, supportsOpacity: false).fixedSize()
                 ForEach(swatches, id: \.self) { s in
                     Circle().fill(s.color).frame(width: 22, height: 22)
                         .overlay(Circle().stroke(Color.primary.opacity(0.3)))
                         .onTapGesture { brush = s.color; eraser = false }
                 }
-                Toggle("Ластик", isOn: $eraser).toggleStyle(.button)
+                Toggle("Eraser", isOn: $eraser).toggleStyle(.button)
             }
 
             KeyboardView(
@@ -32,20 +32,20 @@ struct ColorsView: View {
                 .frame(maxWidth: 900)
 
             HStack(spacing: 14) {
-                ColorPicker("Фон (остальные клавиши)", selection: Binding(
+                ColorPicker("Background (other keys)", selection: Binding(
                     get: { store.config.colorBackground.color },
                     set: { store.config.colorBackground = RGB($0) }), supportsOpacity: false).fixedSize()
-                Button("Залить всё кистью") {
+                Button("Fill all with brush") {
                     for k in Layout.keys { store.config.colors[k.index] = RGB(brush) }
                 }
-                Button("Очистить") { store.config.colors = [:] }
-                Menu("Шаблоны") {
-                    Button("WASD + стрелки") { preset(wasd: true) }
-                    Button("Ряды радугой") { rainbowRows() }
+                Button("Clear") { store.config.colors = [:] }
+                Menu("Presets") {
+                    Button("WASD + arrows") { preset(wasd: true) }
+                    Button("Rainbow rows") { rainbowRows() }
                 }
                 .fixedSize()
             }
-            LevelSlider(title: "Яркость", value: $store.config.colorBrightness, range: 1...5).frame(maxWidth: 360)
+            LevelSlider(title: "Brightness", value: $store.config.colorBrightness, range: 1...5).frame(maxWidth: 360)
             WriteButton { store.applyColors() }
         }
     }

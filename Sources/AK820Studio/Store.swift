@@ -97,11 +97,11 @@ final class Store: ObservableObject {
                 switch result {
                 case let .success(v):
                     self.connected = true
-                    if let title { self.status = ("\(title): готово", true) }
+                    if let title { self.status = (String(localized: "\(title): done"), true) }
                     done?(v)
                 case let .failure(e):
                     if title != nil { self.status = (e.localizedDescription, false) }
-                    self.appendLog("ошибка: \(e.localizedDescription)")
+                    self.appendLog("error: \(e.localizedDescription)")
                 }
             }
         }
@@ -117,31 +117,31 @@ final class Store: ObservableObject {
     func applyLighting() {
         guard busy == nil else { lightingPending = true; return }
         let c = config.lighting
-        run("Подсветка") { try $0.setLighting(c) }
+        run(String(localized: "Lighting")) { try $0.setLighting(c) }
     }
 
     func applyColors() {
         let c = config
-        run("Цвета клавиш") { try $0.setCustomColors(c.colors, background: c.colorBackground, brightness: c.colorBrightness) }
+        run(String(localized: "Key colors")) { try $0.setCustomColors(c.colors, background: c.colorBackground, brightness: c.colorBrightness) }
     }
 
     func applyKeymap() {
         let c = config
-        run("Раскладка и макросы") { try $0.setKeymap(base: c.base, fn: c.fn, macros: c.macros) }
+        run(String(localized: "Keymap and macros")) { try $0.setKeymap(base: c.base, fn: c.fn, macros: c.macros) }
     }
 
     func applySettings() {
         let s = config.settings
-        run("Настройки") { try $0.setSettings(s) }
+        run(String(localized: "Settings")) { try $0.setSettings(s) }
     }
 
     func syncClock() {
-        run("Часы") { try $0.syncClock() }
+        run(String(localized: "Clock")) { try $0.syncClock() }
     }
 
     func uploadScreen(_ image: ScreenImage) {
         let payload = image.payload()
-        run("Экран") { kb in
+        run(String(localized: "Screen")) { kb in
             try kb.uploadScreen(payload) { p in DispatchQueue.main.async { self.progress = p } }
         }
     }
@@ -157,7 +157,7 @@ final class Store: ObservableObject {
         enc.outputFormatting = [.prettyPrinted, .sortedKeys]
         do {
             try enc.encode(config).write(to: url)
-            status = ("Настройки сохранены в \(url.lastPathComponent)", true)
+            status = (String(localized: "Settings saved to \(url.lastPathComponent)"), true)
         } catch { status = (error.localizedDescription, false) }
     }
 
@@ -167,8 +167,8 @@ final class Store: ObservableObject {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             config = try JSONDecoder().decode(Config.self, from: Data(contentsOf: url))
-            status = ("Загружено. Нажмите «Записать» на нужных вкладках, чтобы отправить в клавиатуру.", true)
-        } catch { status = ("Не удалось прочитать файл: \(error.localizedDescription)", false) }
+            status = (String(localized: "Loaded. Press “Write to keyboard” on the relevant tabs to send it to the keyboard."), true)
+        } catch { status = (String(localized: "Couldn't read the file: \(error.localizedDescription)"), false) }
     }
 }
 

@@ -107,7 +107,7 @@ public enum AK820Error: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .notFound:
-            return "Клавиатура не найдена. Подключите AK820 Pro кабелем USB-C (по Bluetooth настройка невозможна)."
+            return String(localized: "Keyboard not found. Connect the AK820 Pro with a USB-C cable (it can't be configured over Bluetooth).")
         case let .io(what, code):
             return "\(what) (IOReturn 0x\(String(UInt32(bitPattern: code), radix: 16)))"
         case let .rejected(what):

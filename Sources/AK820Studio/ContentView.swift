@@ -2,14 +2,15 @@ import AK820Kit
 import SwiftUI
 
 enum AppSection: String, CaseIterable, Identifiable {
-    case lighting = "Подсветка"
-    case colors = "Цвета клавиш"
-    case keymap = "Клавиши"
-    case macros = "Макросы"
-    case screen = "Экран"
-    case settings = "Настройки"
+    case lighting = "Lighting"
+    case colors = "Key Colors"
+    case keymap = "Keys"
+    case macros = "Macros"
+    case screen = "Screen"
+    case settings = "Settings"
 
     var id: String { rawValue }
+    var title: LocalizedStringKey { LocalizedStringKey(rawValue) }
 
     var icon: String {
         switch self {
@@ -32,7 +33,7 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             List(AppSection.allCases, selection: $section) { s in
-                Label(s.rawValue, systemImage: s.icon).tag(s)
+                Label(s.title, systemImage: s.icon).tag(s)
             }
             .navigationSplitViewColumnWidth(190)
             .safeAreaInset(edge: .bottom) { ConnectionBadge().padding(10) }
@@ -52,7 +53,7 @@ struct ContentView: View {
                 Divider()
                 StatusBar()
             }
-            .navigationTitle(section?.rawValue ?? "")
+            .navigationTitle(section?.title ?? "")
         }
     }
 }
@@ -64,12 +65,12 @@ struct ConnectionBadge: View {
         HStack(spacing: 8) {
             Circle().fill(store.connected ? Color.green : Color.red).frame(width: 9, height: 9)
             VStack(alignment: .leading, spacing: 1) {
-                Text(store.connected ? "AK820 Pro (USB)" : "Не подключена").font(.callout)
-                if let b = store.battery { Text("Батарея: \(b) %").font(.caption).foregroundStyle(.secondary) }
+                Text(store.connected ? "AK820 Pro (USB)" : "Not connected").font(.callout)
+                if let b = store.battery { Text("Battery: \(b)%").font(.caption).foregroundStyle(.secondary) }
             }
             Spacer()
         }
-        .help(store.connected ? "Клавиатура подключена кабелем" : "Подключите клавиатуру кабелем USB-C")
+        .help(store.connected ? "The keyboard is connected by cable" : "Connect the keyboard with a USB-C cable")
     }
 }
 
@@ -80,14 +81,14 @@ struct StatusBar: View {
         HStack(spacing: 10) {
             if let busy = store.busy {
                 ProgressView().controlSize(.small)
-                Text("\(busy)…")
+                Text(verbatim: "\(busy)…")
                 if let p = store.progress { ProgressView(value: p).frame(width: 160) }
             } else if let s = store.status {
                 Image(systemName: s.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .foregroundStyle(s.ok ? .green : .orange)
                 Text(s.text).lineLimit(2).textSelection(.enabled)
             } else {
-                Text(store.connected ? "Готово к работе" : "Подключите клавиатуру кабелем USB-C — по Bluetooth и 2.4G настройка недоступна")
+                Text(store.connected ? "Ready" : "Connect the keyboard with a USB-C cable — configuration isn't available over Bluetooth or 2.4 GHz")
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -101,7 +102,7 @@ struct StatusBar: View {
 /// Primary "write to keyboard" button used on every page.
 struct WriteButton: View {
     @EnvironmentObject var store: Store
-    var title = "Записать в клавиатуру"
+    var title: LocalizedStringKey = "Write to keyboard"
     let action: () -> Void
 
     var body: some View {
@@ -113,7 +114,7 @@ struct WriteButton: View {
 
 /// Page scaffold with a header hint.
 struct Page<Content: View>: View {
-    let hint: String
+    let hint: LocalizedStringKey
     @ViewBuilder let content: Content
 
     var body: some View {
