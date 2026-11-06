@@ -9,6 +9,7 @@ enum AppSection: String, CaseIterable, Identifiable {
     case macros = "Macros"
     case screen = "Screen"
     case settings = "Settings"
+    case shortcuts = "Keyboard Shortcuts"
 
     var id: String { rawValue }
     var title: LocalizedStringKey { LocalizedStringKey(rawValue) }
@@ -22,6 +23,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .macros: return "text.badge.plus"
         case .screen: return "photo.on.rectangle"
         case .settings: return "gearshape"
+        case .shortcuts: return "command"
         }
     }
 
@@ -32,7 +34,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .colors: return .colors
         case .keymap, .macros: return .keymap
         case .settings: return .settings
-        case .live, .screen: return nil
+        case .live, .screen, .shortcuts: return nil
         }
     }
 
@@ -40,7 +42,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         ("Lighting", [.lighting, .colors, .live]),
         ("Keyboard", [.keymap, .macros]),
         ("Display", [.screen]),
-        ("Device", [.settings]),
+        ("Device", [.settings, .shortcuts]),
     ]
 }
 
@@ -86,6 +88,7 @@ struct ContentView: View {
                 case .macros: MacrosView()
                 case .screen: ScreenView()
                 case .settings: SettingsView()
+                case .shortcuts: ShortcutsView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

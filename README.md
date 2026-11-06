@@ -18,7 +18,7 @@ tri-mode (USB-C / 2.4 GHz / Bluetooth). Also sold as EPOMAKER × AJAZZ and ATTAC
 - AJAZZ official website (drivers, manuals): <https://www.a-jazz.com/en/search.jsp?id=422&q=ak820>
 - EPOMAKER: <https://epomaker.com/products/ajazz-ak820-pro>
 - ATTACK SHARK: <https://attackshark.com/products/attackshark-ajazz-ak820-pro-75-mechanical-keyboard>
-- User manual: <https://manuals.plus/asin/B0CMWKN55N>
+- User manual: <https://manuals.plus/asin/B0CMWKN55N>, official PDF: <https://epomaker.com/cdn/shop/files/AK820_PRO_manual.pdf>
 
 Supported USB IDs: VID `0C45` (SONiX), PID `8009` / `800A` (wired).
 
@@ -33,6 +33,7 @@ Supported USB IDs: VID `0C45` (SONiX), PID `8009` / `800A` (wired).
 | Macros | text, key combinations, pauses, mouse clicks, **recording from the Mac keyboard**; once / N times / toggle / while held / step |
 | Screen | image or GIF (up to 140 frames) into **one of three slots** of the 128×128 screen; clock sync |
 | Settings | sleep timer, Fn mode, debounce, Win / Alt+Tab / Alt+F4 locks, firmware version, **factory reset with undo**, "write everything again", language, export / import |
+| Keyboard Shortcuts | every factory Fn shortcut from the official manual on an interactive keyboard map: hover to highlight keys, click a key, search; marks shortcuts replaced by your remaps |
 | Menu bar | quick effects, colors, brightness, live lighting, clock sync, launch at login |
 
 Pages with changes that are not written to the keyboard yet are marked with a dot; **⌘S** writes the current page.
@@ -56,6 +57,8 @@ The cable wins when both are connected. Over the receiver the keyboard may be as
 | Live lighting | Menu bar |
 |---|---|
 | ![Live lighting](docs/screenshots/live.png) | ![Menu bar](docs/screenshots/menu-bar.png) |
+
+![Keyboard shortcuts](docs/screenshots/shortcuts.png)
 
 Languages: English, Russian. Adding a language is one file — see [TRANSLATING.md](TRANSLATING.md).
 
