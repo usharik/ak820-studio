@@ -20,5 +20,15 @@ enum Snapshot {
             host.cacheDisplay(in: host.bounds, to: rep)
             try? rep.representation(using: .png, properties: [:])?.write(to: dir.appendingPathComponent("\(i)-\(s).png"))
         }
+        let menu = NSHostingView(rootView: MenuBarView().environmentObject(store))
+        menu.frame = NSRect(origin: .zero, size: menu.fittingSize)
+        let window = NSWindow(contentRect: menu.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.appearance = NSAppearance(named: .aqua)
+        window.contentView = menu
+        RunLoop.main.run(until: Date().addingTimeInterval(0.6))
+        if let rep = menu.bitmapImageRepForCachingDisplay(in: menu.bounds) {
+            menu.cacheDisplay(in: menu.bounds, to: rep)
+            try? rep.representation(using: .png, properties: [:])?.write(to: dir.appendingPathComponent("menubar.png"))
+        }
     }
 }

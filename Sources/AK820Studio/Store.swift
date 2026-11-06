@@ -26,6 +26,8 @@ final class Store: ObservableObject {
     @Published var log: [String] = []
 
     private let queue = DispatchQueue(label: "ak820.hid", qos: .userInitiated)
+    /// Lighting changed while another operation was running; applied when it finishes.
+    private var lightingPending = false
     private var timer: Timer?
 
     static let configURL: URL = {
@@ -86,6 +88,12 @@ final class Store: ObservableObject {
             }
             DispatchQueue.main.async {
                 if title != nil { self.busy = nil; self.progress = nil }
+                defer {
+                    if self.lightingPending, self.busy == nil {
+                        self.lightingPending = false
+                        self.applyLighting()
+                    }
+                }
                 switch result {
                 case let .success(v):
                     self.connected = true
@@ -107,6 +115,7 @@ final class Store: ObservableObject {
     // MARK: Operations
 
     func applyLighting() {
+        guard busy == nil else { lightingPending = true; return }
         let c = config.lighting
         run("Подсветка") { try $0.setLighting(c) }
     }

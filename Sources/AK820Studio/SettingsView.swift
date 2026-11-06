@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var store: Store
     @State private var showLog = false
+    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
 
     private var s: Binding<KeyboardSettings> { $store.config.settings }
 
@@ -34,6 +35,7 @@ struct SettingsView: View {
                 Button("Синхронизировать часы") { store.syncClock() }.disabled(store.busy != nil || !store.connected)
                 Button("Обновить заряд батареи") { store.readBattery() }.disabled(!store.connected)
             }
+            Toggle("Значок AK820 в строке меню (быстрые настройки подсветки)", isOn: $showMenuBarExtra)
             HStack {
                 Button("Экспорт всех настроек…") { store.exportConfig() }
                 Button("Импорт…") { store.importConfig() }
