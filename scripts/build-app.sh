@@ -36,6 +36,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
     <key>NSHighResolutionCapable</key><true/>
+    <key>NSAudioCaptureUsageDescription</key><string>Music mode listens to the system audio to light up the keyboard like an equalizer. Audio is analyzed on this Mac and never stored.</string>
 </dict>
 </plist>
 PLIST

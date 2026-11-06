@@ -8,18 +8,25 @@ public final class HIDDevice {
     public let usagePage: Int
     public let productID: Int
     public let product: String
+    /// bcdDevice, e.g. 0x0114 for firmware 1.14.
+    public let version: Int
 
     // IOKit keeps writing into this buffer while input is scheduled, so it must not move.
     private let inputBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: HIDDevice.inputBufferSize)
     private static let inputBufferSize = 4096
-    private var lastInput: [UInt8]?
+    /// Reports received since the last wait (callbacks run on the scheduling thread only).
+    private var inputs: [[UInt8]] = []
 
     init(_ device: IOHIDDevice) {
         self.device = device
         usagePage = HIDDevice.intProperty(device, kIOHIDPrimaryUsagePageKey) ?? 0
         productID = HIDDevice.intProperty(device, kIOHIDProductIDKey) ?? 0
         product = IOHIDDeviceGetProperty(device, kIOHIDProductKey as CFString) as? String ?? "?"
+        version = HIDDevice.intProperty(device, kIOHIDVersionNumberKey) ?? 0
     }
+
+    /// The BCD version as text ("1.14").
+    public var versionString: String { String(format: "%x.%02x", version >> 8, version & 0xFF) }
 
     deinit { inputBuffer.deallocate() }
 
@@ -78,7 +85,7 @@ public final class HIDDevice {
         let ctx = Unmanaged.passUnretained(self).toOpaque()
         IOHIDDeviceRegisterInputReportCallback(device, inputBuffer, HIDDevice.inputBufferSize, { ctx, _, _, _, _, report, length in
             let me = Unmanaged<HIDDevice>.fromOpaque(ctx!).takeUnretainedValue()
-            me.lastInput = Array(UnsafeBufferPointer(start: report, count: length))
+            me.inputs.append(Array(UnsafeBufferPointer(start: report, count: length)))
         }, ctx)
         IOHIDDeviceScheduleWithRunLoop(device, CFRunLoopGetCurrent(), CFRunLoopMode.defaultMode.rawValue)
     }
@@ -89,12 +96,21 @@ public final class HIDDevice {
 
     /// Runs the current run loop until an input report arrives or the timeout expires.
     public func waitInput(timeout: TimeInterval) -> [UInt8]? {
-        lastInput = nil
+        waitInput(timeout: timeout) { _ in true }
+    }
+
+    /// Waits for an input report accepted by `match`, skipping others.
+    public func waitInput(timeout: TimeInterval, match: ([UInt8]) -> Bool) -> [UInt8]? {
+        inputs.removeAll()
         let deadline = Date().addingTimeInterval(timeout)
-        while lastInput == nil, Date() < deadline {
-            CFRunLoopRunInMode(.defaultMode, 0.01, true)
+        while Date() < deadline {
+            CFRunLoopRunInMode(.defaultMode, 0.005, true)
+            while !inputs.isEmpty {
+                let r = inputs.removeFirst()
+                if match(r) { return r }
+            }
         }
-        return lastInput
+        return nil
     }
 }
 
@@ -103,16 +119,19 @@ public enum AK820Error: LocalizedError {
     case io(String, IOReturn)
     case rejected(String)
     case invalid(String)
+    case unsupported(String)
 
     public var errorDescription: String? {
         switch self {
         case .notFound:
-            return String(localized: "Keyboard not found. Connect the AK820 Pro with a USB-C cable (it can't be configured over Bluetooth).")
+            return String(localized: "Keyboard not found. Connect the AK820 Pro with a USB-C cable or plug in its 2.4 GHz receiver (it can't be configured over Bluetooth).")
         case let .io(what, code):
             return "\(what) (IOReturn 0x\(String(UInt32(bitPattern: code), radix: 16)))"
         case let .rejected(what):
             return what
         case let .invalid(what):
+            return what
+        case let .unsupported(what):
             return what
         }
     }

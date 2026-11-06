@@ -10,43 +10,66 @@ struct KeymapView: View {
 
     var body: some View {
         Page(hint: "Remapping is stored in the keyboard itself: it works on any computer, over cable, 2.4 GHz and Bluetooth. Click a key, choose an action, then press “Write to keyboard”.") {
-            Picker("", selection: $fnLayer) {
-                Text("Base layer").tag(false)
-                Text("Fn layer (Fn + key)").tag(true)
+            HStack {
+                Picker("", selection: $fnLayer) {
+                    Text("Base layer").tag(false)
+                    Text("Fn layer (Fn + key)").tag(true)
+                }
+                .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 380)
+                Spacer()
+                Menu {
+                    Button("Reset this layer", role: .destructive) { layer.wrappedValue = [:]; selected = nil }
+                    Button("Reset all", role: .destructive) { store.config.base = [:]; store.config.fn = [:]; selected = nil }
+                } label: { Label("Reset", systemImage: "arrow.counterclockwise") }
+                .fixedSize()
             }
-            .pickerStyle(.segmented)
-            .frame(maxWidth: 420)
+            .frame(maxWidth: 980)
             .onChange(of: fnLayer) { selected = nil }
 
             KeyboardView(
-                fill: { k in layer.wrappedValue[k.index] != nil ? Color.accentColor.opacity(0.22) : Color(nsColor: .controlBackgroundColor) },
+                fill: { k in layer.wrappedValue[k.index] != nil ? Color.accentColor.opacity(0.55) : .keyCap },
                 caption: { k in layer.wrappedValue[k.index]?.describe(macros: store.config.macros) },
                 selected: selected.map { [$0] } ?? [],
                 disabled: { k in k.index == Layout.fnIndex || (fnLayer && k.fnLocked) },
                 onTap: { selected = $0.index })
                 .frame(maxWidth: 980)
 
-            if let i = selected, let key = Layout.key(i) {
-                GroupBox {
-                    ActionEditor(action: Binding(get: { layer.wrappedValue[i] },
-                                                 set: { layer.wrappedValue[i] = $0 }),
-                                 macros: store.config.macros)
-                        .padding(6)
-                } label: {
-                    Text(verbatim: "\(fnLayer ? "Fn + " : "")\(key.label)").font(.headline)
+            HStack(alignment: .top, spacing: 14) {
+                Card {
+                    if let i = selected, let key = Layout.key(i) {
+                        Text(verbatim: "\(fnLayer ? "Fn + " : "")\(key.label)").font(.title3.bold())
+                        ActionEditor(action: Binding(get: { layer.wrappedValue[i] },
+                                                     set: { layer.wrappedValue[i] = $0 }),
+                                     macros: store.config.macros)
+                            .id("\(fnLayer)-\(i)")   // "Press to pick" must not outlive the selected key
+                    } else {
+                        Label("Select a key on the layout.", systemImage: "cursorarrow.click").foregroundStyle(.secondary)
+                    }
                 }
-                .frame(maxWidth: 620)
-            } else {
-                Text("Select a key on the layout.").foregroundStyle(.secondary)
+                Card(title: "Changed keys") {
+                    let changed = layer.wrappedValue.sorted { $0.key < $1.key }
+                    if changed.isEmpty {
+                        Text("All keys work as from the factory.").foregroundStyle(.secondary)
+                    }
+                    ForEach(changed, id: \.key) { idx, action in
+                        HStack {
+                            Text(verbatim: Layout.key(idx)?.label ?? "#\(idx)").bold().frame(width: 70, alignment: .leading)
+                            Image(systemName: "arrow.right").foregroundStyle(.secondary)
+                            Text(verbatim: action.describe(macros: store.config.macros)).lineLimit(1)
+                            Spacer()
+                            Button { layer.wrappedValue[idx] = nil } label: { Image(systemName: "xmark.circle.fill") }
+                                .buttonStyle(.borderless).foregroundStyle(.secondary)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { selected = idx }
+                    }
+                }
+                .frame(maxWidth: 360)
             }
+            .frame(maxWidth: 980)
 
-            HStack {
-                WriteButton { store.applyKeymap() }
-                Button("Reset this layer") { layer.wrappedValue = [:]; selected = nil }
-                Button("Reset all") { store.config.base = [:]; store.config.fn = [:]; selected = nil }
-            }
             Text("In Mac mode the keyboard swaps Win and Alt by itself. A remapped key sends exactly what you set (⌘, ⌥ …). “Reset” + “Write to keyboard” restores the factory keymap. Fn can't be remapped.")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(.secondary).frame(maxWidth: 980, alignment: .leading)
         }
     }
 }

@@ -77,6 +77,19 @@ struct MenuBarView: View {
             .disabled(light.mode == .off)
 
             Divider()
+            Text("Live lighting").font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                ForEach(LiveMode.allCases) { m in
+                    Button { store.liveMode == m ? store.stopLive() : store.startLive(m) } label: {
+                        Label(m.shortTitle, systemImage: store.liveMode == m ? "stop.fill" : m.icon).frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(store.liveMode == m ? .green : nil)
+                }
+            }
+            .disabled(!store.connected || store.busy != nil)
+
+            Divider()
             VStack(spacing: 0) {
                 MenuRow(title: "Sync clock", icon: "clock") { store.syncClock() }.disabled(!ready)
                 MenuRow(title: "Open AK820 Studio…", icon: "macwindow") { openMain() }
@@ -95,17 +108,16 @@ struct MenuBarView: View {
         HStack(spacing: 8) {
             Image(systemName: "keyboard").font(.title2)
             VStack(alignment: .leading, spacing: 1) {
-                Text("AK820 Pro").font(.headline)
+                Text(verbatim: "AK820 Pro").font(.headline)
                 Group {
                     if let busy = store.busy {
                         Text(verbatim: "\(busy)…")
-                    } else if !store.connected {
-                        Text("Not connected by cable")
-                    } else if let s = store.status, !s.ok {
-                        Text(s.text).foregroundStyle(.orange)
+                    } else if let d = store.device {
+                        if let b = store.battery { Text(verbatim: "\(d.connection.title) · \(b)%") } else { Text(verbatim: d.connection.title) }
                     } else {
-                        if let b = store.battery { Text("Connected · battery \(b)%") } else { Text("Connected") }
+                        Text("Not connected")
                     }
+                    if let t = store.toast, !t.ok { Text(verbatim: t.text).foregroundStyle(.orange) }
                 }
                 .font(.caption).foregroundStyle(.secondary).lineLimit(2)
             }
@@ -153,7 +165,7 @@ struct MenuBarView: View {
         do {
             if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
         } catch {
-            store.status = (String(localized: "Launch at login: \(error.localizedDescription)"), false)
+            store.showToast(String(localized: "Launch at login: \(error.localizedDescription)"), ok: false)
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }

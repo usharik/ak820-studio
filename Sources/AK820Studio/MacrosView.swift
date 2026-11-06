@@ -24,6 +24,7 @@ struct MacrosView: View {
             Group {
                 if let i = store.config.macros.firstIndex(where: { $0.id == selection }) {
                     MacroEditor(macro: $store.config.macros[i])
+                        .id(store.config.macros[i].id)   // a fresh editor (and recorder) per macro
                 } else {
                     Page(hint: "Macros are played by the keyboard itself: text, key combinations, pauses and mouse clicks. Create a macro (+), then assign it to a key on the “Keys” tab.") {
                         Text("Total space: about 3.5 KB (≈ 100 characters of text per 1 KB).").foregroundStyle(.secondary)
@@ -52,11 +53,36 @@ struct MacrosView: View {
 struct MacroEditor: View {
     @EnvironmentObject var store: Store
     @Binding var macro: Macro
+    @State private var recording = false
+    @State private var monitor: Any?
+
+    private func startRecording() {
+        recording = true
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in
+            // Typing into a text field (e.g. the macro name) is left alone.
+            if NSApp.keyWindow?.firstResponder is NSTextView { return e }
+            guard let code = HIDUsage.fromMacKeyCode[e.keyCode] else { return nil }
+            var mods: UInt8 = 0
+            let f = e.modifierFlags
+            if f.contains(.control) { mods |= 0x01 }
+            if f.contains(.shift) { mods |= 0x02 }
+            if f.contains(.option) { mods |= 0x04 }
+            if f.contains(.command) { mods |= 0x08 }
+            macro.steps.append(.combo(modifiers: mods, code: code))
+            return nil
+        }
+    }
+
+    private func stopRecording() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        recording = false
+    }
 
     private var sizeInfo: (String, Bool) {
         do {
             let all = store.config.macros
-            let block = try Encode.macroBlock(all)
+            let block = try Encode.macroBlock(all).data
             return (String(localized: "Macro memory used: \(block.count) of 3584 bytes"), true)
         } catch { return (error.localizedDescription, false) }
     }
@@ -83,6 +109,16 @@ struct MacroEditor: View {
                 Button("Key combination") { macro.steps.append(.combo(modifiers: 0x08, code: 0x06)) }
                 Button("Pause") { macro.steps.append(.delay(ms: 200)) }
                 Button("Mouse click") { macro.steps.append(.click(.left)) }
+                Divider().frame(height: 18)
+                Button { recording ? stopRecording() : startRecording() } label: {
+                    Label(recording ? "Stop recording" : "Record keys", systemImage: recording ? "stop.circle.fill" : "record.circle")
+                }
+                .tint(recording ? .red : nil)
+                .buttonStyle(.bordered)
+            }
+            if recording {
+                Text("Press keys and shortcuts on the Mac keyboard — each one is added as a step.")
+                    .font(.caption).foregroundStyle(.red)
             }
 
             Stepper("Pause between key events: \(macro.gapMs) ms", value: $macro.gapMs, in: 10...500, step: 5).frame(maxWidth: 360)
@@ -90,11 +126,10 @@ struct MacroEditor: View {
             let info = sizeInfo
             Text(info.0).font(.caption).foregroundStyle(info.1 ? Color.secondary : Color.red)
 
-            HStack {
-                WriteButton(title: "Write macros and keymap") { store.applyKeymap() }
-                Text("Macros are written together with the keymap.").font(.caption).foregroundStyle(.secondary)
-            }
+            Text("Macros are written together with the keymap: press “Write to keyboard” (⌘S).")
+                .font(.caption).foregroundStyle(.secondary)
         }
+        .onDisappear(perform: stopRecording)
     }
 }
 

@@ -39,3 +39,6 @@ Packet sequences, checksums, macro block layout, system settings packet and the
 "static = breathing at speed 0" behaviour follow
 [gha-projects/ak820-mac](https://github.com/gha-projects/ak820-mac) (`ak820.py`, `docs/`),
 MIT License, Copyright (c) 2026 gha.
+
+The 2.4 GHz receiver framing (`docs/receptor-24g.md`) and the system-audio spectrum analyzer
+(`musica/espectro.swift`, ported to `Sources/AK820Studio/Live.swift`) also come from ak820-mac.

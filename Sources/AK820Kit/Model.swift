@@ -180,6 +180,10 @@ public enum Encode {
     }
 
     public static func lighting(_ c: LightingConfig) -> [UInt8] {
+        var c = c
+        if c.mode == .custom {   // like the official driver: per-key colors carry no color/rainbow/speed
+            c.color = .black; c.rainbow = false; c.speed = 0
+        }
         // Effect 01 is untested on this firmware; the hardware-verified "static" is breath at speed 0.
         let isStatic = c.mode == .statik
         var p = [UInt8](repeating: 0, count: packet)
@@ -193,7 +197,7 @@ public enum Encode {
         return p
     }
 
-    public static func clock(_ date: Date, calendar: Calendar = .current) -> [UInt8] {
+    public static func clock(_ date: Date, calendar: Calendar = Calendar(identifier: .gregorian)) -> [UInt8] {
         let c = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
         var p = [UInt8](repeating: 0, count: packet)
         p[1] = 0x01; p[2] = 0x5A
@@ -293,26 +297,49 @@ public enum Encode {
         return ev
     }
 
-    /// The whole macro area (all 100 slots), padded to 64 and ended by `AA 55`.
-    public static func macroBlock(_ macros: [Macro]) throws -> [UInt8] {
+    /// The whole macro area (all 100 slots), padded to `packet` bytes and ended by `AA 55`.
+    /// `used` is the number of meaningful bytes (index + bodies).
+    public static func macroBlock(_ macros: [Macro], packet: Int = Encode.packet) throws -> (data: [UInt8], used: Int) {
         guard macros.count <= 100 else { throw AK820Error.invalid(String(localized: "No more than 100 macros")) }
         var block = [UInt8](repeating: 0, count: macroBlockMax)
         var pos = macroBodyStart
+        let tooBig = AK820Error.invalid(String(localized: "The macros don't fit into the keyboard memory (3.5 KB). Make them shorter."))
         for (i, m) in macros.enumerated() {
             let ev = try events(m)
             let body = ev.flatMap { $0 }
-            guard pos + 8 + body.count + 2 <= macroBlockMax else {
-                throw AK820Error.invalid(String(localized: "The macros don't fit into the keyboard memory (3.5 KB). Make them shorter."))
-            }
+            guard pos + 8 + body.count <= macroBlockMax else { throw tooBig }
             block[i * 4] = UInt8(pos & 0xFF); block[i * 4 + 1] = UInt8(pos >> 8)
             block[pos] = UInt8(ev.count & 0xFF); block[pos + 1] = UInt8(ev.count >> 8)
             block.replaceSubrange(pos + 8..<pos + 8 + body.count, with: body)
             pos += 8 + body.count
         }
+        // Like the official driver: always at least one spare byte before the AA 55 trailer.
         let packets = pos / packet + (pos % packet == 0 ? 1 : 2)
-        let size = min(packets * packet, macroBlockMax)
+        let size = packets * packet
+        guard size <= macroBlockMax else { throw tooBig }
         block[size - 2] = 0xAA; block[size - 1] = 0x55
-        return Array(block[0..<size])
+        return (Array(block[0..<size]), pos)
+    }
+
+    // MARK: 2.4 GHz receiver
+
+    /// Receiver payload for lighting / settings / clock: the first 14 bytes of the wired packet + `AA 55`.
+    public static func short(_ packet: [UInt8]) -> [UInt8] {
+        Array(packet.prefix(14)) + [0xAA, 0x55]
+    }
+
+    /// 32-byte receiver frames: `[order, length, index, ≤28 data bytes, sum]`.
+    public static func dongleFrames(_ order: UInt8, _ data: [UInt8], lastLength: Int? = nil) -> [[UInt8]] {
+        let chunks = stride(from: 0, to: max(data.count, 1), by: 28).map { Array(data[$0..<min($0 + 28, data.count)]) }
+        return chunks.enumerated().map { i, chunk in
+            var f = [UInt8](repeating: 0, count: 32)
+            f[0] = order
+            f[1] = UInt8(i == chunks.count - 1 ? (lastLength ?? chunk.count) : chunk.count)
+            f[2] = UInt8(i)
+            f.replaceSubrange(3..<3 + chunk.count, with: chunk)
+            f[31] = UInt8(truncatingIfNeeded: f[0..<31].reduce(0) { $0 + Int($1) })
+            return f
+        }
     }
 
     /// Byte sum the keyboard echoes back on COMMIT (little-endian u16).

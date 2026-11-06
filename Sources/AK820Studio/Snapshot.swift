@@ -8,7 +8,7 @@ enum Snapshot {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let store = Store()
         for (i, s) in AppSection.allCases.enumerated() {
-            let view = ContentView(section: s).environmentObject(store).frame(width: 1180, height: 820)
+            let view = ContentView(section: s).environmentObject(store).frame(width: 1180, height: 820).background(Color(nsColor: .windowBackgroundColor))
             let host = NSHostingView(rootView: view)
             host.frame = NSRect(x: 0, y: 0, width: 1180, height: 820)
             let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
