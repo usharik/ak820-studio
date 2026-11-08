@@ -17,6 +17,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN/AK820Studio" "$APP/Contents/MacOS/AK820Studio"
 cp "$BIN/ak820ctl" dist/ak820ctl
 cp -R Localization/*.lproj "$APP/Contents/Resources/"
+cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"   # regenerate with: swift scripts/make-icon.swift
 LOCALIZATIONS=$(for d in Localization/*.lproj; do printf '<string>%s</string>' "$(basename "$d" .lproj)"; done)
 
 cat > "$APP/Contents/Info.plist" <<PLIST
@@ -29,6 +30,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleName</key><string>AK820 Studio</string>
     <key>CFBundleDisplayName</key><string>AK820 Studio</string>
     <key>CFBundleIdentifier</key><string>local.ak820studio</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundleExecutable</key><string>AK820Studio</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>0.1.0</string>

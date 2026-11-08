@@ -1,3 +1,5 @@
+<img src="Resources/AppIcon.png" width="128" align="right" alt="AK820 Studio icon">
+
 # AK820 Studio
 
 **Native macOS configurator for the AJAZZ AK820 Pro keyboard** — no Windows, no browser.

@@ -1,3 +1,5 @@
+<img src="Resources/AppIcon.png" width="128" align="right" alt="AK820 Studio icon">
+
 # AK820 Studio
 
 **Нативное приложение для macOS для настройки клавиатуры AJAZZ AK820 Pro** — без Windows и браузера.
