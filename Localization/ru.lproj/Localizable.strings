@@ -16,6 +16,9 @@
 "An image or GIF for the 128×128 screen. The image is center-cropped to a square. GIFs: up to 140 frames." = "Картинка или GIF для экрана 128×128. Изображение обрезается по центру до квадрата. GIF — до 140 кадров.";
 "Animation, frames: %lld" = "Анимация, кадров: %lld";
 "App" = "Приложение";
+"Quick Controls" = "Быстрые настройки";
+"Quick Controls…" = "Быстрые настройки…";
+"If macOS hides the icon in a crowded menu bar, use Quick Controls from the app menu (⇧⌘L) or this button." = "Если macOS скрывает значок в переполненной строке меню, откройте быстрые настройки из меню приложения (⇧⌘L) или этой кнопкой.";
 "Apply" = "Применить";
 "Apply changes immediately" = "Применять сразу при изменении";
 "Approximate preview" = "Примерный предпросмотр";

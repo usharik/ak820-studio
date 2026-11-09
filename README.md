@@ -40,6 +40,15 @@ Supported USB IDs: VID `0C45` (SONiX), PID `8009` / `800A` (wired).
 
 Pages with changes that are not written to the keyboard yet are marked with a dot; **⌘S** writes the current page.
 
+With the menu bar widget enabled, closing the main window keeps the app running. Click its Dock icon
+or choose **Open AK820 Studio…** in the menu bar widget to reopen it.
+
+On a crowded menu bar, especially on a MacBook with a notch, macOS can hide the status icon.
+The same controls are always available through **AK820 Studio → Quick Controls…** (**⇧⌘L**)
+or the **Quick Controls…** button in Settings, even with the menu bar widget disabled.
+To make room for the icon, hide unused status items; hold **⌘** while dragging the AK820 icon
+to keep it closer to the clock.
+
 Everything is stored **in the keyboard** and keeps working on any computer and any connection.
 
 ### Connections
@@ -51,6 +60,10 @@ Everything is stored **in the keyboard** and keeps working on any computer and a
 | Music lighting | ✅ (drawn by the app) | ✅ (drawn by the keyboard) | — |
 
 The cable wins when both are connected. Over the receiver the keyboard may be asleep: press a key to wake it up.
+
+Bluetooth supports typing, but does not expose the vendor configuration interface. To configure
+wirelessly, plug in the keyboard's USB receiver and switch the keyboard to **2.4G**; pairing it over
+Bluetooth is not enough.
 
 | Keys | Key colors |
 |---|---|

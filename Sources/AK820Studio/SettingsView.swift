@@ -4,6 +4,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var store: Store
+    @Environment(\.openWindow) private var openWindow
     @State private var showLog = false
     @State private var confirmReset = false
     @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
@@ -80,6 +81,9 @@ struct SettingsView: View {
                     store.showToast(String(localized: "Restart AK820 Studio to apply the language."), ok: true)
                 }
                 Toggle("AK820 icon in the menu bar (quick lighting controls)", isOn: $showMenuBarExtra)
+                Button("Quick Controls…") { openWindow(id: "quick-controls") }
+                Text("If macOS hides the icon in a crowded menu bar, use Quick Controls from the app menu (⇧⌘L) or this button.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Toggle("Launch at login", isOn: Binding(get: { launchAtLogin }, set: setLaunchAtLogin))
                 HStack {
                     Button("Export all settings…") { store.exportConfig() }

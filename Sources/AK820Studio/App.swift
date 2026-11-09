@@ -9,19 +9,24 @@ struct AK820StudioApp: App {
 
     var body: some Scene {
         Window("AK820 Studio", id: "main") {
-            ContentView()
+            MainWindowContent(delegate: delegate)
                 .environmentObject(store)
                 .frame(minWidth: 980, minHeight: 640)
-                // With the menu bar widget on, closing the window hides the Dock icon instead of quitting.
-                .onAppear { NSApp.setActivationPolicy(.regular) }
-                .onDisappear { if showMenuBarExtra { NSApp.setActivationPolicy(.accessory) } }
         }
         .commands {
+            CommandGroup(after: .appInfo) {
+                QuickControlsCommand()
+            }
             CommandGroup(replacing: .importExport) {
                 Button("Export Settings…") { store.exportConfig() }
                 Button("Import Settings…") { store.importConfig() }
             }
         }
+
+        Window("Quick Controls", id: "quick-controls") {
+            MenuBarView().environmentObject(store)
+        }
+        .windowResizability(.contentSize)
 
         MenuBarExtra(isInserted: $showMenuBarExtra) {
             MenuBarView().environmentObject(store)
@@ -32,7 +37,30 @@ struct AK820StudioApp: App {
     }
 }
 
+private struct QuickControlsCommand: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Quick Controls…") { openWindow(id: "quick-controls") }
+            .keyboardShortcut("l", modifiers: [.command, .shift])
+    }
+}
+
+private struct MainWindowContent: View {
+    let delegate: AppDelegate
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        ContentView()
+            .onAppear {
+                delegate.openMainWindow = { openWindow(id: "main") }
+            }
+    }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    var openMainWindow: (() -> Void)?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let dir = ProcessInfo.processInfo.environment["AK820_SNAPSHOT"] {
             Snapshot.renderAll(to: URL(fileURLWithPath: dir))
@@ -45,6 +73,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         !UserDefaults.standard.bool(forKey: "showMenuBarExtra", default: true)
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag { openMainWindow?() }
+        return true
     }
 }
 
